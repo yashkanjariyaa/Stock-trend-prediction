@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ML Model Prediction Form</title>
+    <link rel="stylesheet" href="../static/style.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: url("../static/d3f41be339f89c1fb7bdad9d33a6fc81.jpg");
+        background-position: 0;
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
+
+      .prediction-result {
+        margin-top: 20px;
+      }
+
+      #prediction {
+        margin-top: 10px;
+        height: 2vw;
+        width: 5vw;
+        font-size: 2vw;
+
+      }
+
+      .prediction-success {
+        color: green;
+      }
+
+      .prediction-failure {
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Petroleum Trade and Stock Prediction Form</h1>
+      <form id="prediction-form">
+        <label for="close">Close Price:</label>
+        <input type="number" id="close" name="close" step="0.01" required />
+        <br /><br />
+        <label for="high">High Price:</label>
+        <input type="number" id="high" name="high" step="0.01" required />
+        <br /><br />
+        <label for="low">Low Price:</label>
+        <input type="number" id="low" name="low" step="0.01" required />
+        <br /><br />
+        <label for="open">Open Price:</label>
+        <input type="number" id="open" name="open" step="0.01" required />
+        <br /><br />
+        <label for="volume">Volume:</label>
+        <input type="number" id="volume" name="volume" required />
+        <br /><br />
+        <label for="target">Target:</label>
+        <input type="number" id="target" name="target" required />
+        <br /><br />
+        <label for="Trade Value">Trade Value:</label>
+        <input
+          type="number"
+          id="trade-value"
+          name="Trade Value"
+          step="0.01"
+          required
+        />
+        <br /><br />
+        <button type="submit">Predict</button>
+      </form>
+      <!-- Display elements for accuracy, prediction, and classification report -->
+      <div class="prediction-result">
+        <p id="prediction"></p>
+      </div>
+    </div>
+    <script>
+      document
+        .getElementById("prediction-form")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+
+          // Get form data
+          const formData = new FormData(this);
+          const requestData = {};
+          formData.forEach((value, key) => {
+            requestData[key] = value;
+          });
+
+          // Add current year to form data
+          const currentYear = new Date().getFullYear();
+          requestData["Year"] = currentYear;
+
+          // Add current date to form data
+          const currentDate = new Date().toISOString().split("T")[0];
+          requestData["date"] = currentDate;
+
+          for (const [key, value] of Object.entries(requestData)) {
+            console.log(`${key}: ${value}`);
+          }
+
+          // Send POST request to Flask API
+          fetch("/predict", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestData),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.json();
+            })
+            .then((data) => {
+              console.log(data);
+              if (data && data.prediction !== undefined) {
+                document.getElementById("prediction").textContent =
+                  "Predicted Target Class: " + data.prediction;
+
+                // Set color based on prediction value
+                const predictionElement = document.getElementById("prediction");
+                if (data.prediction === 1) {
+                  predictionElement.classList.add("prediction-success");
+                } else {
+                  predictionElement.classList.add("prediction-failure");
+                }
+              } else {
+                throw new Error("Invalid response format");
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("An error occurred while predicting.");
+            });
+        });
+    </script>
+  </body>
+</html>
